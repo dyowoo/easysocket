@@ -84,34 +84,36 @@ func (s *Server) startTCPServer() {
 }
 
 func (s *Server) startWsServer() {
-	upgrade := &websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
+	go func() {
+		upgrade := &websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		}
 
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		conn, err := upgrade.Upgrade(writer, request, nil)
+		http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+			conn, err := upgrade.Upgrade(writer, request, nil)
 
-		if err != nil {
-			fmt.Println("websocket error:", err)
+			if err != nil {
+				fmt.Println("websocket error:", err)
+				return
+			}
+
+			connId++
+			sess := NewWsSession(s, conn, connId, s.msgHandle)
+
+			s.sessMgr.Add(sess)
+
+			go sess.Start()
+		})
+
+		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.host, s.port), nil); err != nil {
+			fmt.Println("http listen error:", err)
 			return
 		}
 
-		connId++
-		sess := NewWsSession(s, conn, connId, s.msgHandle)
-
-		s.sessMgr.Add(sess)
-
-		go sess.Start()
-	})
-
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.host, s.port), nil); err != nil {
-		fmt.Println("http listen error:", err)
-		return
-	}
-
-	fmt.Println("websocket server is running...")
+		fmt.Println("websocket server is running...")
+	}()
 }
 
 func (s *Server) startTCPClient() {
