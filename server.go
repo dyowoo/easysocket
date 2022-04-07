@@ -10,6 +10,7 @@ package easysocket
 
 import (
 	"fmt"
+	"github.com/gorilla/websocket"
 	"net"
 	"net/http"
 )
