@@ -24,12 +24,12 @@ type WsSession struct {
 func NewWsSession(server IServer, conn *websocket.Conn, connId uint32, handler IMessageHandler) *WsSession {
 	sess := &WsSession{
 		Session: Session{
-			server:         server,
-			connId:         connId,
-			messageHandler: handler,
-			msgBuffChan:    make(chan []byte, 1024),
-			property:       nil,
-			isClosed:       false,
+			server:      server,
+			connId:      connId,
+			msgHandle:   handler,
+			msgBuffChan: make(chan []byte, 1024),
+			property:    nil,
+			isClosed:    false,
 		},
 		conn: conn,
 	}
@@ -68,7 +68,7 @@ func (s *WsSession) startReader() {
 					msg:  msg,
 				}
 
-				s.messageHandler.SendMsgToTaskQueue(req)
+				s.msgHandle.SendMsgToTaskQueue(req)
 			}
 		}
 	}

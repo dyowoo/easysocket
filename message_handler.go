@@ -18,6 +18,7 @@ type IMessageHandler interface {
 	AddRouter(msgId int32, router IRouter)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
+	StartWorkerPool()
 }
 
 type MessageHandler struct {

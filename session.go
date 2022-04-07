@@ -35,12 +35,12 @@ type ISession interface {
 }
 
 type Session struct {
-	server         IServer
-	connId         uint32
-	messageHandler IMessageHandler
-	ctx            context.Context
-	cancel         context.CancelFunc
-	msgBuffChan    chan []byte
+	server      IServer
+	connId      uint32
+	msgHandle   IMessageHandler
+	ctx         context.Context
+	cancel      context.CancelFunc
+	msgBuffChan chan []byte
 
 	sync.RWMutex
 	property     map[string]interface{}

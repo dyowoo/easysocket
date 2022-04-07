@@ -25,13 +25,13 @@ type TCPSession struct {
 func NewTCPSession(server IServer, conn net.Conn, connId uint32, handler IMessageHandler) *TCPSession {
 	sess := &TCPSession{
 		Session: Session{
-			server:         server,
-			connId:         connId,
-			messageHandler: handler,
-			msgBuffChan:    make(chan []byte, 1024),
-			RWMutex:        sync.RWMutex{},
-			property:       nil,
-			isClosed:       false,
+			server:      server,
+			connId:      connId,
+			msgHandle:   handler,
+			msgBuffChan: make(chan []byte, 1024),
+			RWMutex:     sync.RWMutex{},
+			property:    nil,
+			isClosed:    false,
 		},
 		conn: conn,
 	}
@@ -75,7 +75,7 @@ func (s *TCPSession) startReader() {
 					msg:  msg,
 				}
 
-				s.messageHandler.SendMsgToTaskQueue(req)
+				s.msgHandle.SendMsgToTaskQueue(req)
 			}
 		}
 	}
