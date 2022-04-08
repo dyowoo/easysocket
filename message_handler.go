@@ -13,11 +13,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+	"reflect"
 )
 
 type IMessageHandler interface {
 	DoMsgHandler(request IRequest)
-	AddRouter(msgId int32, router IRouter, protocol string)
+	AddRouter(msgId int32, router IRouter, v any)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
 	StartWorkerPool()
@@ -33,6 +34,7 @@ type MessageHandler struct {
 func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
 		routers:        make(map[int32]IRouter),
+		protocols:      make(map[int32]string),
 		workerPoolSize: 10,
 		taskQueue:      make([]chan IRequest, 10),
 	}
@@ -85,7 +87,7 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 }
 
 // AddRouter 添加具体消息处理逻辑
-func (m *MessageHandler) AddRouter(msgId int32, router IRouter, protocol string) {
+func (m *MessageHandler) AddRouter(msgId int32, router IRouter, v any) {
 	if _, ok := m.routers[msgId]; ok {
 		panic(fmt.Sprintf("repeated router, msgId = %d", msgId))
 	}
@@ -95,7 +97,7 @@ func (m *MessageHandler) AddRouter(msgId int32, router IRouter, protocol string)
 	}
 
 	m.routers[msgId] = router
-	m.protocols[msgId] = protocol
+	m.protocols[msgId] = reflect.TypeOf(v).Name()
 }
 
 // 启动一个worker工作进程

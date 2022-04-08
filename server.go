@@ -21,7 +21,7 @@ type IServer interface {
 	start()
 	Stop()
 	Serve()
-	AddRouter(msgId int32, router IRouter, protocol string)
+	AddRouter(msgId int32, router IRouter, v any)
 	GetSessMgr() ISessionManager
 	SetOnConnStart(hookFunc HookFunc)
 	SetOnConnStop(hookFunc HookFunc)
@@ -161,8 +161,8 @@ func (s *Server) Serve() {
 	s.start()
 }
 
-func (s *Server) AddRouter(msgId int32, router IRouter, protocol string) {
-	s.msgHandle.AddRouter(msgId, router, protocol)
+func (s *Server) AddRouter(msgId int32, router IRouter, v any) {
+	s.msgHandle.AddRouter(msgId, router, v)
 }
 
 func (s *Server) GetSessMgr() ISessionManager {
