@@ -10,12 +10,14 @@ package easysocket
 
 import (
 	"fmt"
-	"strconv"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 type IMessageHandler interface {
 	DoMsgHandler(request IRequest)
-	AddRouter(msgId int32, router IRouter)
+	AddRouter(msgId int32, router IRouter, protocol string)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
 	StartWorkerPool()
@@ -23,6 +25,7 @@ type IMessageHandler interface {
 
 type MessageHandler struct {
 	routers        map[int32]IRouter
+	protocols      map[int32]string
 	workerPoolSize uint32
 	taskQueue      []chan IRequest
 }
@@ -41,6 +44,30 @@ func (m *MessageHandler) SendMsgToTaskQueue(request IRequest) {
 	m.taskQueue[workerId] <- request
 }
 
+// ReflectProto 通过反射把数据解析成proto message
+func (m *MessageHandler) ReflectProto(request IRequest) proto.Message {
+	msgId := request.GetMsgId()
+	data := request.GetData()
+
+	if _, ok := m.protocols[msgId]; !ok {
+		fmt.Println("msgId: ", msgId, " not exist")
+		return nil
+	}
+
+	msgRef, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(m.protocols[msgId]))
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
+
+	msg := msgRef.New().Interface().(proto.Message)
+
+	_ = proto.Unmarshal(data, msg)
+
+	return msg
+}
+
 // DoMsgHandler 处理消息
 func (m *MessageHandler) DoMsgHandler(request IRequest) {
 	handler, ok := m.routers[request.GetMsgId()]
@@ -50,23 +77,30 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 		return
 	}
 
-	handler.PreHandle(request)
-	handler.Handle(request)
-	handler.PostHandle(request)
+	msg := m.ReflectProto(request)
+
+	handler.PreHandle(request, msg)
+	handler.Handle(request, msg)
+	handler.PostHandle(request, msg)
 }
 
 // AddRouter 添加具体消息处理逻辑
-func (m *MessageHandler) AddRouter(msgId int32, router IRouter) {
+func (m *MessageHandler) AddRouter(msgId int32, router IRouter, protocol string) {
 	if _, ok := m.routers[msgId]; ok {
-		panic("repeated router, msgId = " + strconv.Itoa(int(msgId)))
+		panic(fmt.Sprintf("repeated router, msgId = %d", msgId))
+	}
+
+	if _, ok := m.protocols[msgId]; ok {
+		panic(fmt.Sprintf("repeated protocol, msgId = %d", msgId))
 	}
 
 	m.routers[msgId] = router
+	m.protocols[msgId] = protocol
 }
 
 // 启动一个worker工作进程
 func (m *MessageHandler) startOneWorker(workerId int, taskQueue chan IRequest) {
-	fmt.Println("worker ID = ", workerId, " is started.")
+	//fmt.Println("worker ID = ", workerId, " is started.")
 	for {
 		select {
 		case request := <-taskQueue:
@@ -77,6 +111,7 @@ func (m *MessageHandler) startOneWorker(workerId int, taskQueue chan IRequest) {
 
 // StartWorkerPool 启动工作池
 func (m *MessageHandler) StartWorkerPool() {
+	fmt.Println("启动工作池...")
 	for i := 0; i < int(m.workerPoolSize); i++ {
 		m.taskQueue[i] = make(chan IRequest, 1024)
 		go m.startOneWorker(i, m.taskQueue[i])

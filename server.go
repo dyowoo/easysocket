@@ -21,7 +21,7 @@ type IServer interface {
 	start()
 	Stop()
 	Serve()
-	AddRouter(msgId int32, router IRouter)
+	AddRouter(msgId int32, router IRouter, protocol string)
 	GetSessMgr() ISessionManager
 	SetOnConnStart(hookFunc HookFunc)
 	SetOnConnStop(hookFunc HookFunc)
@@ -42,9 +42,10 @@ type Server struct {
 	OnConnStart HookFunc
 	OnConnStop  HookFunc
 	dataPack    IDataPack
+	options     Options
 }
 
-func NewServer(name string, serverType ServerType, host string, port int) *Server {
+func NewServer(name string, serverType ServerType, host string, port int, opts ...Option) *Server {
 	return &Server{
 		serverName: name,
 		ServerType: serverType,
@@ -53,6 +54,7 @@ func NewServer(name string, serverType ServerType, host string, port int) *Serve
 		msgHandle:  NewMessageHandler(),
 		sessMgr:    NewSessionManager(),
 		dataPack:   NewDataPack(),
+		options:    newOptions(opts...),
 	}
 }
 
@@ -107,9 +109,16 @@ func (s *Server) startWsServer() {
 			go sess.Start()
 		})
 
-		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.host, s.port), nil); err != nil {
-			fmt.Println("http listen error:", err)
-			return
+		if s.options.keyFile == "" || s.options.certFile == "" {
+			if err := http.ListenAndServe(fmt.Sprintf("%s:%d", s.host, s.port), nil); err != nil {
+				fmt.Println("http listen error:", err)
+				return
+			}
+		} else {
+			if err := http.ListenAndServeTLS(fmt.Sprintf("%s:%d", s.host, s.port), s.options.certFile, s.options.keyFile, nil); err != nil {
+				fmt.Println("http listen error:", err)
+				return
+			}
 		}
 
 		fmt.Println("websocket server is running...")
@@ -152,8 +161,8 @@ func (s *Server) Serve() {
 	s.start()
 }
 
-func (s *Server) AddRouter(msgId int32, router IRouter) {
-	s.msgHandle.AddRouter(msgId, router)
+func (s *Server) AddRouter(msgId int32, router IRouter, protocol string) {
+	s.msgHandle.AddRouter(msgId, router, protocol)
 }
 
 func (s *Server) GetSessMgr() ISessionManager {

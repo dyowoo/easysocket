@@ -8,16 +8,18 @@
 
 package easysocket
 
+import "google.golang.org/protobuf/proto"
+
 type IRouter interface {
-	PreHandle(request IRequest)
-	Handle(request IRequest)
-	PostHandle(request IRequest)
+	PreHandle(request IRequest, message proto.Message)
+	Handle(request IRequest, message proto.Message)
+	PostHandle(request IRequest, message proto.Message)
 }
 
 type BaseRouter struct{}
 
-func (r *BaseRouter) PreHandle(request IRequest) {}
+func (r *BaseRouter) PreHandle(request IRequest, message proto.Message) {}
 
-func (r *BaseRouter) Handle(request IRequest) {}
+func (r *BaseRouter) Handle(request IRequest, message proto.Message) {}
 
-func (r *BaseRouter) PostHandle(request IRequest) {}
+func (r *BaseRouter) PostHandle(request IRequest, message proto.Message) {}
