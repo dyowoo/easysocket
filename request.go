@@ -8,10 +8,13 @@
 
 package easysocket
 
+import "google.golang.org/protobuf/proto"
+
 type IRequest interface {
 	GetSession() ISession
 	GetData() []byte
 	GetMsgId() int32
+	SendMsg(msgId int32, message proto.Message) error
 }
 
 type Request struct {
@@ -32,4 +35,14 @@ func (r *Request) GetData() []byte {
 // GetMsgId 获取请求的消息的ID
 func (r *Request) GetMsgId() int32 {
 	return r.msg.GetMsgId()
+}
+
+func (r *Request) SendMsg(msgId int32, message proto.Message) error {
+	buffer, err := proto.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	return r.sess.SendBuffMsg(msgId, buffer)
 }
