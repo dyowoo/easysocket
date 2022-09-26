@@ -18,6 +18,7 @@ import (
 
 type IMessageHandler interface {
 	DoMsgHandler(request IRequest)
+	SetGateHandler(handler GateHandler)
 	AddRouter(msgId int32, router IRouter, v any)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
@@ -25,6 +26,7 @@ type IMessageHandler interface {
 }
 
 type MessageHandler struct {
+	gateHandler    GateHandler
 	routers        map[int32]IRouter
 	protocols      map[int32]string
 	workerPoolSize uint32
@@ -33,6 +35,7 @@ type MessageHandler struct {
 
 func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
+		gateHandler:    nil,
 		routers:        make(map[int32]IRouter),
 		protocols:      make(map[int32]string),
 		workerPoolSize: 10,
@@ -72,18 +75,27 @@ func (m *MessageHandler) ReflectProto(request IRequest) proto.Message {
 
 // DoMsgHandler 处理消息
 func (m *MessageHandler) DoMsgHandler(request IRequest) {
-	handler, ok := m.routers[request.GetMsgId()]
+	if m.gateHandler != nil {
+		m.gateHandler(request)
+	} else {
+		handler, ok := m.routers[request.GetMsgId()]
 
-	if !ok {
-		fmt.Println("router msgId = ", request.GetMsgId(), " is not found")
-		return
+		if !ok {
+			fmt.Println("router msgId = ", request.GetMsgId(), " is not found")
+			return
+		}
+
+		msg := m.ReflectProto(request)
+
+		handler.PreHandle(request, msg)
+		handler.Handle(request, msg)
+		handler.PostHandle(request, msg)
 	}
+}
 
-	msg := m.ReflectProto(request)
-
-	handler.PreHandle(request, msg)
-	handler.Handle(request, msg)
-	handler.PostHandle(request, msg)
+// SetGateHandler 设置网关处理函数
+func (m *MessageHandler) SetGateHandler(handler GateHandler) {
+	m.gateHandler = handler
 }
 
 // AddRouter 添加具体消息处理逻辑

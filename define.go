@@ -10,6 +10,7 @@ package easysocket
 
 type ServerType uint32
 type EventType int
+type GateHandler func(request IRequest)
 
 const (
 	NullServer ServerType = iota
