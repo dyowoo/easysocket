@@ -57,8 +57,8 @@ func (s *Session) SetProperty(key string, value interface{}) error {
 	s.propertyLock.Lock()
 	defer s.propertyLock.Unlock()
 
-	if _, ok := s.property[key]; ok {
-		return errors.New("property is exist")
+	if s.property == nil {
+		s.property = make(map[string]interface{})
 	}
 
 	s.property[key] = value
@@ -96,9 +96,7 @@ func (s *Session) SendBuffMsg(msgId int32, data []byte) error {
 		return errors.New("connection is closed when send buff msg")
 	}
 
-	dp := s.server.DataPack()
-
-	msg := dp.Pack(NewMessage(msgId, data))
+	msg := DP.Pack(NewMessage(msgId, data))
 
 	select {
 	case <-idleTimeout.C:

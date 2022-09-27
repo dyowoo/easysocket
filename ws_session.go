@@ -56,12 +56,12 @@ func (s *WsSession) startReader() {
 			}
 
 			// 获取消息头数据
-			headData := data[:s.server.DataPack().GetHeadLen()]
+			headData := data[:DP.GetHeadLen()]
 			// 解析消息头
-			msg := s.server.DataPack().UnPack(headData)
+			msg := DP.UnPack(headData)
 
 			if msg.GetDataLen() > 0 {
-				msg.SetData(data[s.server.DataPack().GetHeadLen():])
+				msg.SetData(data[DP.GetHeadLen():])
 
 				req := &Request{
 					sess: s,
@@ -123,8 +123,7 @@ func (s *WsSession) SendMsg(msgId int32, data []byte) error {
 		return errors.New("connection closed when send msg")
 	}
 
-	dp := s.server.DataPack()
-	msg := dp.Pack(NewMessage(msgId, data))
+	msg := DP.Pack(NewMessage(msgId, data))
 
 	return s.conn.WriteMessage(websocket.BinaryMessage, msg)
 }

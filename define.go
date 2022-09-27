@@ -8,8 +8,9 @@
 
 package easysocket
 
+type HookFunc func(session ISession)
+
 type ServerType uint32
-type EventType int
 type GateHandler func(request IRequest)
 
 const (

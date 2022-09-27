@@ -35,7 +35,9 @@ func NewTCPSession(server IServer, conn net.Conn, connId uint32, handler IMessag
 		},
 		conn: conn,
 	}
+
 	sess.server.GetSessMgr().Add(sess)
+
 	return sess
 }
 
@@ -53,13 +55,13 @@ func (s *TCPSession) startReader() {
 		case <-s.ctx.Done():
 			return
 		default:
-			headData := make([]byte, s.server.DataPack().GetHeadLen())
+			headData := make([]byte, DP.GetHeadLen())
 			if _, err := io.ReadFull(s.conn, headData); err != nil {
 				fmt.Println("read msg head error: ", err)
-				break
+				return
 			}
 
-			msg := s.server.DataPack().UnPack(headData)
+			msg := DP.UnPack(headData)
 
 			if msg.GetDataLen() > 0 {
 				data := make([]byte, msg.GetDataLen())
@@ -131,8 +133,7 @@ func (s *TCPSession) SendMsg(msgId int32, data []byte) error {
 		return errors.New("connection closed when send msg")
 	}
 
-	dp := s.server.DataPack()
-	msg := dp.Pack(NewMessage(msgId, data))
+	msg := DP.Pack(NewMessage(msgId, data))
 
 	_, err := s.conn.Write(msg)
 	return err

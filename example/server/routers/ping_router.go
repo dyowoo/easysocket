@@ -1,17 +1,17 @@
 /**
  * @Author: Jason
  * @Description:
- * @File: login_router
- * @Version: 1.0.0
- * @Date: 2022/4/8 12:47
- */
+ * @File: ping_router.go
+ * @Date: 2022/9/27 10:47
+ **/
 
 package routers
 
 import (
 	"fmt"
 	"github.com/dyowoo/easysocket"
-	"github.com/dyowoo/easysocket/example/server/ProtoMsg"
+	"github.com/dyowoo/easysocket/example/common"
+	"github.com/dyowoo/easysocket/example/common/ProtoMsg"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -22,18 +22,13 @@ type PingRouter struct {
 func (r *PingRouter) Handle(request easysocket.IRequest, message proto.Message) {
 	msg := message.(*ProtoMsg.C2S_Ping)
 
-	fmt.Println("===> client msgId: ", request.GetMsgId(), " msg: ", msg.GetPing())
+	connId, _ := request.GetSession().GetProperty("ConnID")
 
-	pong := ProtoMsg.S2C_Pong{
-		Pong: "pong",
+	fmt.Println("ConnID = ", connId)
+
+	pong := &ProtoMsg.S2C_Pong{
+		Pong: msg.Ping,
 	}
 
-	buffer, err := proto.Marshal(proto.Message(&pong))
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	_ = request.GetSession().SendBuffMsg(int32(ProtoMsg.CMD_PONG), buffer)
+	common.ServiceSendMsg(request, int32(ProtoMsg.CMD_GAME_PONG), pong)
 }

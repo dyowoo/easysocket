@@ -14,6 +14,7 @@ type IRequest interface {
 	GetSession() ISession
 	GetData() []byte
 	GetMsgId() int32
+	SetMsg(msgId int32, data []byte)
 	SendMsg(msgId int32, message proto.Message) error
 }
 
@@ -35,6 +36,11 @@ func (r *Request) GetData() []byte {
 // GetMsgId 获取请求的消息的ID
 func (r *Request) GetMsgId() int32 {
 	return r.msg.GetMsgId()
+}
+
+func (r *Request) SetMsg(msgId int32, data []byte) {
+	r.msg.SetMsgId(msgId)
+	r.msg.SetData(data)
 }
 
 func (r *Request) SendMsg(msgId int32, message proto.Message) error {

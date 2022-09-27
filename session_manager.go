@@ -51,7 +51,6 @@ func (m *SessionManager) Remove(session ISession) {
 	defer m.sessLock.Unlock()
 
 	delete(m.sessions, session.GetConnId())
-	fmt.Println()
 }
 
 // Get 获取链接

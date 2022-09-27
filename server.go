@@ -11,11 +11,11 @@ package easysocket
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"google.golang.org/protobuf/proto"
 	"net"
 	"net/http"
+	"time"
 )
-
-type HookFunc func(session ISession)
 
 type IServer interface {
 	start()
@@ -28,22 +28,23 @@ type IServer interface {
 	SetOnConnStop(hookFunc HookFunc)
 	CallOnConnStart(session ISession)
 	CallOnConnStop(session ISession)
-	DataPack() IDataPack
+	SendMsg(msgId int32, message proto.Message)
+	SendBufferMsg(request IRequest)
 }
 
 var connId uint32 = 0
 
 type Server struct {
-	serverName  string
-	ServerType  ServerType
-	host        string
-	port        int
-	msgHandle   IMessageHandler
-	sessMgr     ISessionManager
-	OnConnStart HookFunc
-	OnConnStop  HookFunc
-	dataPack    IDataPack
-	options     Options
+	serverName    string
+	ServerType    ServerType
+	host          string
+	port          int
+	msgHandle     IMessageHandler
+	sessMgr       ISessionManager
+	serverSession *TCPSession
+	OnConnStart   HookFunc
+	OnConnStop    HookFunc
+	options       Options
 }
 
 func NewServer(name string, serverType ServerType, host string, port int, opts ...Option) *Server {
@@ -54,7 +55,6 @@ func NewServer(name string, serverType ServerType, host string, port int, opts .
 		port:       port,
 		msgHandle:  NewMessageHandler(),
 		sessMgr:    NewSessionManager(),
-		dataPack:   NewDataPack(),
 		options:    newOptions(opts...),
 	}
 }
@@ -127,16 +127,19 @@ func (s *Server) startWsServer() {
 }
 
 func (s *Server) startTCPClient() {
-	go func() {
+	for {
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port))
 		if err != nil {
 			fmt.Println("connect error", err)
-			return
+			// 等待重连
+			time.Sleep(10 * time.Second)
+			continue
 		}
 		connId++
-		sess := NewTCPSession(s, conn, connId, s.msgHandle)
-		go sess.Start()
-	}()
+		s.serverSession = NewTCPSession(s, conn, connId, s.msgHandle)
+		go s.serverSession.Start()
+		break
+	}
 }
 
 func (s *Server) start() {
@@ -194,6 +197,12 @@ func (s *Server) CallOnConnStop(session ISession) {
 	}
 }
 
-func (s *Server) DataPack() IDataPack {
-	return s.dataPack
+func (s *Server) SendMsg(msgId int32, message proto.Message) {
+	buffer, _ := proto.Marshal(message)
+
+	_ = s.serverSession.SendMsg(msgId, buffer)
+}
+
+func (s *Server) SendBufferMsg(request IRequest) {
+	s.msgHandle.SendMsgToTaskQueue(request)
 }

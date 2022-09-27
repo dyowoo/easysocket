@@ -10,18 +10,8 @@ package easysocket
 
 import "encoding/binary"
 
-type IDataPack interface {
-	GetHeadLen() uint32
-	Pack(message IMessage) []byte
-	UnPack(data []byte) IMessage
-}
-
 // DataPack 封包拆包类实例
 type DataPack struct{}
-
-func NewDataPack() IDataPack {
-	return &DataPack{}
-}
 
 // GetHeadLen 获取包头长度
 func (dp *DataPack) GetHeadLen() uint32 {
@@ -57,3 +47,5 @@ func (dp *DataPack) UnPack(data []byte) IMessage {
 
 	return msg
 }
+
+var DP = DataPack{}
