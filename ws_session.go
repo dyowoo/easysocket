@@ -14,14 +14,16 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net"
+	"strings"
 )
 
 type WsSession struct {
 	Session
 	conn *websocket.Conn
+	ip   string
 }
 
-func NewWsSession(server IServer, conn *websocket.Conn, connId uint32, handler IMessageHandler) *WsSession {
+func NewWsSession(server IServer, conn *websocket.Conn, connId uint32, handler IMessageHandler, ip string) *WsSession {
 	sess := &WsSession{
 		Session: Session{
 			server:      server,
@@ -32,6 +34,7 @@ func NewWsSession(server IServer, conn *websocket.Conn, connId uint32, handler I
 			isClosed:    false,
 		},
 		conn: conn,
+		ip:   ip,
 	}
 
 	sess.server.GetSessMgr().Add(sess)
@@ -113,6 +116,16 @@ func (s *WsSession) Start() {
 
 func (s *WsSession) RemoteAddr() net.Addr {
 	return s.conn.RemoteAddr()
+}
+
+func (s *WsSession) RemoteIP() string {
+	if s.ip == "" {
+		l := strings.Split(s.conn.RemoteAddr().String(), ":")
+		if len(l) > 0 {
+			s.ip = l[0]
+		}
+	}
+	return s.ip
 }
 
 func (s *WsSession) SendMsg(msgId int32, data []byte) error {

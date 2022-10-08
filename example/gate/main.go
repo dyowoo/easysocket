@@ -21,7 +21,8 @@ var GS easysocket.IServer
 
 func main() {
 	// 处理客户端
-	CS = easysocket.NewServer("ClientGate", easysocket.TcpServer, "0.0.0.0", 19000)
+	CS = easysocket.NewServer("ClientGate", easysocket.WsServer, "0.0.0.0", 19000)
+
 	CS.SetGateHandler(gateHandler)
 	CS.SetOnConnStart(playerStart)
 	CS.SetOnConnStop(playerStop)
@@ -42,7 +43,7 @@ func main() {
 }
 
 func playerStart(session easysocket.ISession) {
-	fmt.Println("新玩家连接")
+	fmt.Println("新玩家连接: ", session.RemoteIP())
 	managers.PlayerMgr.Add(&managers.Player{
 		Session: session,
 	})

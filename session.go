@@ -24,6 +24,7 @@ type ISession interface {
 	Context() context.Context
 
 	RemoteAddr() net.Addr
+	RemoteIP() string
 	GetConnId() uint32
 
 	SendMsg(msgId int32, data []byte) error

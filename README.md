@@ -138,3 +138,35 @@ func main() {
 	select {}
 }
 ```
+
+```
+upstream proxy_server {
+        server 127.0.0.1:19000;
+}
+
+server {
+        listen 443 ssl;
+        server_name xxx.xxx.com;
+        location / {
+                proxy_pass http://proxy_server;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header Connection "upgrade";
+                proxy_connect_timeout 30d;
+                proxy_send_timeout 30d;
+                proxy_read_timeout 30d;
+        }
+        keepalive_timeout 999999999s;
+        ssl_certificate cert/xxx.pem;  #需要将cert-file-name.pem替换成已上传的证书文件的名称。
+        ssl_certificate_key cert/xxx.key; #需要将cert-file-name.key替换成已上传的证书密钥文件的名称。
+        ssl_session_timeout 99999999m;
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+        #表示使用的加密套件的类型。
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2; #表示使用的TLS协议的类型。
+        ssl_prefer_server_ciphers on;
+}
+
+```

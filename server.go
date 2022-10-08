@@ -102,8 +102,10 @@ func (s *Server) startWsServer() {
 				return
 			}
 
+			realIp := request.Header.Get("X-Forwarded-For")
+
 			connId++
-			sess := NewWsSession(s, conn, connId, s.msgHandle)
+			sess := NewWsSession(s, conn, connId, s.msgHandle, realIp)
 
 			s.sessMgr.Add(sess)
 

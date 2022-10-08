@@ -124,6 +124,10 @@ func (s *TCPSession) RemoteAddr() net.Addr {
 	return s.conn.RemoteAddr()
 }
 
+func (s *TCPSession) RemoteIP() string {
+	return s.conn.RemoteAddr().String()
+}
+
 // SendMsg 直接将Message数据发送给远程TCP客户端
 func (s *TCPSession) SendMsg(msgId int32, data []byte) error {
 	s.RLock()
