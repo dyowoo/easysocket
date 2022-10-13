@@ -33,9 +33,10 @@ func createClient(name string, ping int32) {
 		ping := &ProtoMsg.C2S_Ping{
 			Ping: ping,
 		}
+		time.Sleep(3 * time.Second)
 
 		for {
-			time.Sleep(5 * time.Second)
+			time.Sleep(10)
 
 			c.SendMsg(int32(ProtoMsg.CMD_GAME_PING), ping)
 		}

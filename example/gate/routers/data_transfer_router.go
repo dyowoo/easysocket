@@ -39,8 +39,6 @@ func (r *DataTransferRouter) Handle(request easysocket.IRequest, message proto.M
 
 	_ = proto.Unmarshal(msg.GetData(), m)
 
-	fmt.Println(m)
-
 	_ = player.Session.SendMsg(msg.MsgID, msg.Data)
 
 }

@@ -87,6 +87,10 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 
 		msg := m.ReflectProto(request)
 
+		if msg == nil {
+			return
+		}
+
 		handler.PreHandle(request, msg)
 		handler.Handle(request, msg)
 		handler.PostHandle(request, msg)

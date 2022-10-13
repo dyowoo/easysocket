@@ -21,9 +21,10 @@ var GS easysocket.IServer
 
 func main() {
 	// 处理客户端
-	CS = easysocket.NewServer("ClientGate", easysocket.WsServer, "0.0.0.0", 19000)
+	CS = easysocket.NewServer("ClientGate", easysocket.TcpServer, "0.0.0.0", 19000)
 
-	CS.SetGateHandler(gateHandler)
+	//CS.SetGateHandler(gateHandler)
+	CS.AddRouter(int32(ProtoMsg.CMD_GAME_PING), &routers.PingRouter{}, ProtoMsg.C2S_Ping{})
 	CS.SetOnConnStart(playerStart)
 	CS.SetOnConnStop(playerStop)
 
@@ -71,8 +72,6 @@ func serverStop(session easysocket.ISession) {
 }
 
 func gateHandler(request easysocket.IRequest) {
-	fmt.Println("msgId: ", request.GetMsgId(), "; connId: ", request.GetSession().GetConnId())
-
 	dataTransfer := &ProtoMsg.G2S_DataTransfer{
 		ConnId: request.GetSession().GetConnId(),
 		MsgID:  request.GetMsgId(),
@@ -100,7 +99,7 @@ func gateHandler(request easysocket.IRequest) {
 
 	buffer, _ := proto.Marshal(dataTransfer)
 
-	err := serverItem.Session.SendMsg(int32(ProtoMsg.CMD_SERVICE_G2S_DATA_TRANSFER), buffer)
+	err := serverItem.Session.SendBuffMsg(int32(ProtoMsg.CMD_SERVICE_G2S_DATA_TRANSFER), buffer)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

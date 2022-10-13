@@ -1,10 +1,3 @@
-/**
- * @Author: Jason
- * @Description:
- * @File: ping_router.go
- * @Date: 2022/9/27 10:47
- **/
-
 package routers
 
 import (
