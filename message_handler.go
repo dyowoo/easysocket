@@ -16,9 +16,12 @@ import (
 	"reflect"
 )
 
+type PreRouterHandle func(request IRequest, message proto.Message) bool
+
 type IMessageHandler interface {
 	DoMsgHandler(request IRequest)
 	SetGateHandler(handler GateHandler)
+	AddPreRouter(handle PreRouterHandle)
 	AddRouter(msgId int32, router IRouter, v any)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
@@ -26,20 +29,22 @@ type IMessageHandler interface {
 }
 
 type MessageHandler struct {
-	gateHandler    GateHandler
-	routers        map[int32]IRouter
-	protocols      map[int32]string
-	workerPoolSize uint32
-	taskQueue      []chan IRequest
+	gateHandler     GateHandler
+	preRouterHandle PreRouterHandle
+	routers         map[int32]IRouter
+	protocols       map[int32]string
+	workerPoolSize  uint32
+	taskQueue       []chan IRequest
 }
 
 func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
-		gateHandler:    nil,
-		routers:        make(map[int32]IRouter),
-		protocols:      make(map[int32]string),
-		workerPoolSize: 10,
-		taskQueue:      make([]chan IRequest, 10),
+		gateHandler:     nil,
+		preRouterHandle: nil,
+		routers:         make(map[int32]IRouter),
+		protocols:       make(map[int32]string),
+		workerPoolSize:  10,
+		taskQueue:       make([]chan IRequest, 10),
 	}
 }
 
@@ -91,6 +96,10 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 			return
 		}
 
+		if m.preRouterHandle != nil && !m.preRouterHandle(request, msg) {
+			return
+		}
+
 		handler.PreHandle(request, msg)
 		handler.Handle(request, msg)
 		handler.PostHandle(request, msg)
@@ -100,6 +109,11 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 // SetGateHandler 设置网关处理函数
 func (m *MessageHandler) SetGateHandler(handler GateHandler) {
 	m.gateHandler = handler
+}
+
+// AddPreRouter 添加路由前置处理
+func (m *MessageHandler) AddPreRouter(handle PreRouterHandle) {
+	m.preRouterHandle = handle
 }
 
 // AddRouter 添加具体消息处理逻辑

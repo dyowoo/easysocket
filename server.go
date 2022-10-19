@@ -21,6 +21,7 @@ type IServer interface {
 	start()
 	Stop()
 	Serve()
+	AddPreRouter(handle PreRouterHandle)
 	AddRouter(msgId int32, router IRouter, v any)
 	SetGateHandler(handler GateHandler)
 	GetSessMgr() ISessionManager
@@ -165,6 +166,10 @@ func (s *Server) Stop() {
 
 func (s *Server) Serve() {
 	s.start()
+}
+
+func (s *Server) AddPreRouter(handle PreRouterHandle) {
+	s.msgHandle.AddPreRouter(handle)
 }
 
 func (s *Server) AddRouter(msgId int32, router IRouter, v any) {
