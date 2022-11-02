@@ -8,10 +8,12 @@
 
 package easysocket
 
+import "google.golang.org/protobuf/proto"
+
 type HookFunc func(session ISession)
 
 type ServerType uint32
-type GateHandler func(request IRequest)
+type GateHandler func(request IRequest, message proto.Message)
 
 const (
 	NullServer ServerType = iota
