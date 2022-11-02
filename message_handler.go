@@ -80,19 +80,20 @@ func (m *MessageHandler) ReflectProto(request IRequest) proto.Message {
 
 // DoMsgHandler 处理消息
 func (m *MessageHandler) DoMsgHandler(request IRequest) {
-	msg := m.ReflectProto(request)
-
-	if msg == nil {
-		return
-	}
 
 	if m.gateHandler != nil {
-		m.gateHandler(request, msg)
+		m.gateHandler(request)
 	} else {
 		handler, ok := m.routers[request.GetMsgId()]
 
 		if !ok {
 			fmt.Println("router msgId = ", request.GetMsgId(), " is not found")
+			return
+		}
+
+		msg := m.ReflectProto(request)
+
+		if msg == nil {
 			return
 		}
 
