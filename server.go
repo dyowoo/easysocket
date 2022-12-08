@@ -22,14 +22,13 @@ type IServer interface {
 	Stop()
 	Serve()
 	AddPreRouter(handle PreRouterHandle)
-	AddRouter(msgId int32, router IRouter, v any)
+	AddRouter(msgId int32, router IRouter, message proto.Message)
 	SetGateHandler(handler GateHandler)
 	GetSessMgr() ISessionManager
 	SetOnConnStart(hookFunc HookFunc)
 	SetOnConnStop(hookFunc HookFunc)
 	CallOnConnStart(session ISession)
 	CallOnConnStop(session ISession)
-	SendMsg(msgId int32, message proto.Message)
 	SendBufferMsg(request IRequest)
 }
 
@@ -172,8 +171,8 @@ func (s *Server) AddPreRouter(handle PreRouterHandle) {
 	s.msgHandle.AddPreRouter(handle)
 }
 
-func (s *Server) AddRouter(msgId int32, router IRouter, v any) {
-	s.msgHandle.AddRouter(msgId, router, v)
+func (s *Server) AddRouter(msgId int32, router IRouter, message proto.Message) {
+	s.msgHandle.AddRouter(msgId, router, message)
 }
 
 func (s *Server) SetGateHandler(handler GateHandler) {
@@ -202,12 +201,6 @@ func (s *Server) CallOnConnStop(session ISession) {
 	if s.OnConnStop != nil {
 		s.OnConnStop(session)
 	}
-}
-
-func (s *Server) SendMsg(msgId int32, message proto.Message) {
-	buffer, _ := proto.Marshal(message)
-
-	_ = s.serverSession.SendMsg(msgId, buffer)
 }
 
 func (s *Server) SendBufferMsg(request IRequest) {

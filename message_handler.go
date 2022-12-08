@@ -16,13 +16,11 @@ import (
 	"reflect"
 )
 
-type PreRouterHandle func(request IRequest, message proto.Message) bool
-
 type IMessageHandler interface {
 	DoMsgHandler(request IRequest)
 	SetGateHandler(handler GateHandler)
 	AddPreRouter(handle PreRouterHandle)
-	AddRouter(msgId int32, router IRouter, v any)
+	AddRouter(msgId int32, router IRouter, message proto.Message)
 	startOneWorker(workerId int, taskQueue chan IRequest)
 	SendMsgToTaskQueue(request IRequest)
 	StartWorkerPool()
@@ -101,9 +99,7 @@ func (m *MessageHandler) DoMsgHandler(request IRequest) {
 			return
 		}
 
-		handler.PreHandle(request, msg)
 		handler.Handle(request, msg)
-		handler.PostHandle(request, msg)
 	}
 }
 
@@ -118,7 +114,7 @@ func (m *MessageHandler) AddPreRouter(handle PreRouterHandle) {
 }
 
 // AddRouter 添加具体消息处理逻辑
-func (m *MessageHandler) AddRouter(msgId int32, router IRouter, v any) {
+func (m *MessageHandler) AddRouter(msgId int32, router IRouter, message proto.Message) {
 	if _, ok := m.routers[msgId]; ok {
 		panic(fmt.Sprintf("repeated router, msgId = %d", msgId))
 	}
@@ -128,7 +124,7 @@ func (m *MessageHandler) AddRouter(msgId int32, router IRouter, v any) {
 	}
 
 	m.routers[msgId] = router
-	m.protocols[msgId] = reflect.TypeOf(v).Name()
+	m.protocols[msgId] = reflect.TypeOf(message).Name()
 }
 
 // 启动一个worker工作进程
