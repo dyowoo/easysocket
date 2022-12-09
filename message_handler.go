@@ -11,9 +11,6 @@ package easysocket
 import (
 	"fmt"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"reflect"
 )
 
 type IMessageHandler interface {
@@ -30,9 +27,10 @@ type MessageHandler struct {
 	gateHandler     GateHandler
 	preRouterHandle PreRouterHandle
 	routers         map[int32]IRouter
-	protocols       map[int32]string
-	workerPoolSize  uint32
-	taskQueue       []chan IRequest
+	//protocols       map[int32]string
+	protocols      map[int32]proto.Message
+	workerPoolSize uint32
+	taskQueue      []chan IRequest
 }
 
 func NewMessageHandler() *MessageHandler {
@@ -40,7 +38,7 @@ func NewMessageHandler() *MessageHandler {
 		gateHandler:     nil,
 		preRouterHandle: nil,
 		routers:         make(map[int32]IRouter),
-		protocols:       make(map[int32]string),
+		protocols:       make(map[int32]proto.Message),
 		workerPoolSize:  10,
 		taskQueue:       make([]chan IRequest, 10),
 	}
@@ -62,16 +60,18 @@ func (m *MessageHandler) ReflectProto(request IRequest) proto.Message {
 		return nil
 	}
 
-	msgRef, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(m.protocols[msgId]))
+	//msgRef, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(m.protocols[msgId]))
+	//
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return nil
+	//}
+	//
+	//msg := msgRef.New().Interface().(proto.Message)
 
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil
-	}
+	msg := m.protocols[msgId]
 
-	msg := msgRef.New().Interface().(proto.Message)
-
-	_ = proto.Unmarshal(data, msg)
+	_ = proto.Unmarshal(data, m.protocols[msgId])
 
 	return msg
 }
@@ -124,7 +124,8 @@ func (m *MessageHandler) AddRouter(msgId int32, router IRouter, message proto.Me
 	}
 
 	m.routers[msgId] = router
-	m.protocols[msgId] = reflect.TypeOf(message).Name()
+	//m.protocols[msgId] = reflect.TypeOf(message).Name()
+	m.protocols[msgId] = message
 }
 
 // 启动一个worker工作进程
