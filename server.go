@@ -11,7 +11,6 @@ package easysocket
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"google.golang.org/protobuf/proto"
 	"net"
 	"net/http"
 	"time"
@@ -22,7 +21,7 @@ type IServer interface {
 	Stop()
 	Serve()
 	AddPreRouter(handle PreRouterHandle)
-	AddRouter(msgId int32, router IRouter, message proto.Message)
+	AddRouter(msgId int32, router IRouter, v interface{})
 	SetGateHandler(handler GateHandler)
 	GetSessMgr() ISessionManager
 	SetOnConnStart(hookFunc HookFunc)
@@ -171,8 +170,8 @@ func (s *Server) AddPreRouter(handle PreRouterHandle) {
 	s.msgHandle.AddPreRouter(handle)
 }
 
-func (s *Server) AddRouter(msgId int32, router IRouter, message proto.Message) {
-	s.msgHandle.AddRouter(msgId, router, message)
+func (s *Server) AddRouter(msgId int32, router IRouter, v interface{}) {
+	s.msgHandle.AddRouter(msgId, router, v)
 }
 
 func (s *Server) SetGateHandler(handler GateHandler) {
